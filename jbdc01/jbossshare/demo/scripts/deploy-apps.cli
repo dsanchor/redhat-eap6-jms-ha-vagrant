@@ -1,0 +1,22 @@
+# Deploy a list of apps in all or given server groups
+
+batch
+
+#Add some apps just to group demosg01
+deploy /deployments/v1/sender.ear  --server-groups=demosg01
+deploy /deployments/v1/reader.ear  --server-groups=demosg01
+deploy /deployments/v1/history.ear  --server-groups=demosg01
+deploy /deployments/v1/consumer.ear  --server-groups=demosg01
+
+echo "Apps deployed in demosg01"
+
+#Add some apps just to group demosg02
+deploy /deployments/v2/sender-2.ear  --server-groups=demosg02
+deploy /deployments/v2/reader-2.ear  --server-groups=demosg02
+deploy /deployments/v2/history-2.ear  --server-groups=demosg02
+deploy /deployments/v2/consumer-2.ear  --server-groups=demosg02
+
+echo "Apps deployed in demosg02"
+
+# Execute batch
+run-batch

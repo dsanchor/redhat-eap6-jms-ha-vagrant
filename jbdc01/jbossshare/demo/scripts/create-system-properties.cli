@@ -1,0 +1,12 @@
+# Create demo system properties
+batch
+
+/system-property=jboss.loadbalancer.port:add(value=80)
+/system-property=jboss.loadbalancer.host:add(value=jblb01.arch.redhat.dev)
+/system-property=jboss.datagrid.topology:add(value=jbdg01.arch.redhat.dev:11222;jbdg02.arch.redhat.dev:11222;jbdg03.arch.redhat.dev:11222;jbdg04.arch.redhat.dev:11222)
+/system-property=jboss.messaging.cluster.password:add(value=jmsdemocluster)
+
+echo "Demo system properties created"
+
+# Execute batch
+run-batch

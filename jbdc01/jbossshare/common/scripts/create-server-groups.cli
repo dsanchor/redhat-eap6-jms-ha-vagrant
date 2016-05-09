@@ -1,0 +1,31 @@
+# Create server groups demosg01, demosg01back, demosg02 and demosg02back
+
+batch
+
+#Remove default groups
+/server-group=main-server-group:remove
+/server-group=other-server-group:remove
+echo "Default server groups removed"
+ 
+# Create server group demosg01 and related configuration
+/server-group=demosg01:add(profile=demo,socket-binding-group=full-ha-sockets,jvm=default)
+/server-group=demosg01/system-property=loadbalancer.group:add(value=demo-lb-group01)
+#messaging cluster group for demosg01
+/server-group=demosg01/system-property=jboss.messaging.group.address:add(value=231.7.7.8)
+/server-group=demosg01/system-property=jboss.messaging.group.port:add(value=9876)
+# TODO include memory options and so on if needed
+
+
+# Create server group demosg02 and related configuration
+/server-group=demosg02:add(profile=demo,socket-binding-group=full-ha-sockets,jvm=default)
+/server-group=demosg02/system-property=loadbalancer.group:add(value=demo-lb-group02)
+#messaging cluster group for demosg02
+/server-group=demosg02/system-property=jboss.messaging.group.address:add(value=231.7.7.9)
+/server-group=demosg02/system-property=jboss.messaging.group.port:add(value=9876)
+# TODO include memory options and so on if needed
+
+
+echo "Server groups demosg01 and demosg02 created"
+
+# Execute batch
+run-batch

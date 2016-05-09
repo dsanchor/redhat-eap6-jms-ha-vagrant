@@ -1,0 +1,9 @@
+# Create common system properties
+batch
+
+/system-property=jboss.mod_cluster.jvmRoute:add(value=${jboss.node.name})
+
+echo "Common system properties created"
+
+# Execute batch
+run-batch

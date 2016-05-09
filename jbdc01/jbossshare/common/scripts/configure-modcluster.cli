@@ -1,0 +1,16 @@
+# Configure modcluster according to the current env
+batch
+
+#balancing group
+/profile=demo/subsystem=modcluster/mod-cluster-config=configuration/:write-attribute(name=advertise-socket,value=modcluster)
+/profile=demo/subsystem=modcluster/mod-cluster-config=configuration/:write-attribute(name=proxy-list,value="jblb01.arch.redhat.dev:6666,jblb02.arch.redhat.dev:6666")
+/profile=demo/subsystem=modcluster/mod-cluster-config=configuration/:write-attribute(name=load-balancing-group,value=${loadbalancer.group})
+/profile=demo/subsystem=modcluster/mod-cluster-config=configuration/:write-attribute(name=balancer,value=demo-balancer)
+/profile=demo/subsystem=modcluster/mod-cluster-config=configuration/:write-attribute(name=advertise,value=false)
+/profile=demo/subsystem=modcluster/mod-cluster-config=configuration/:write-attribute(name=auto-enable-contexts,value=true)
+/profile=demo/subsystem=modcluster/mod-cluster-config=configuration/:write-attribute(name=connector,value=ajp)
+
+echo "Modcluster subsystem configured"
+
+# Execute batch
+run-batch

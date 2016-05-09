@@ -1,0 +1,86 @@
+# Configure messsaging
+
+batch
+
+# create new socket binding for backup servers
+/socket-binding-group=full-ha-sockets/socket-binding=messaging-backup/:add(port=5446)
+/socket-binding-group=full-ha-sockets/socket-binding=messaging-throughput-backup/:add(port=5456)
+
+
+# Remove default messaging
+/profile="demo"/subsystem="messaging"/hornetq-server="default":remove
+
+# Create messaging with two hornetq servers (live and backup)
+
+# Live
+/profile="demo"/subsystem="messaging"/hornetq-server="live":add(cluster-password="${jboss.messaging.cluster.password}",clustered="true",journal-min-files="2",journal-type="NIO",persistence-enabled="true")
+/profile="demo"/subsystem="messaging"/hornetq-server="live"/address-setting="#":add(address-full-policy="PAGE",dead-letter-address="jms.queue.DLQ",expiry-address="jms.queue.ExpiryQueue",max-size-bytes="10485760",message-counter-history-day-limit="10",page-size-bytes="2097152",redelivery-delay="0",redistribution-delay="1000")
+/profile="demo"/subsystem="messaging"/hornetq-server="live"/broadcast-group="bg-group1":add(broadcast-period="5000",connectors=["netty"],socket-binding="messaging-group")
+/profile="demo"/subsystem="messaging"/hornetq-server="live"/cluster-connection="my-cluster":add(cluster-connection-address="jms",connector-ref="netty",discovery-group-name="dg-group1")
+/profile="demo"/subsystem="messaging"/hornetq-server="live"/connection-factory="InVmConnectionFactory":add(connector={"in-vm" => undefined},entries=["java:/ConnectionFactory"])
+/profile="demo"/subsystem="messaging"/hornetq-server="live"/connection-factory="RemoteConnectionFactory":add(block-on-acknowledge="true",connector={"netty" => undefined},entries=["java:jboss/exported/jms/RemoteConnectionFactory"],ha="true",reconnect-attempts="-1",retry-interval="1000",retry-interval-multiplier="1.0")
+/profile="demo"/subsystem="messaging"/hornetq-server="live"/discovery-group="dg-group1":add(refresh-timeout="10000",socket-binding="messaging-group")
+/profile="demo"/subsystem="messaging"/hornetq-server="live"/in-vm-acceptor="in-vm":add(server-id="0")
+/profile="demo"/subsystem="messaging"/hornetq-server="live"/in-vm-connector="in-vm":add(server-id="0")
+/profile="demo"/subsystem="messaging"/hornetq-server="live"/jms-queue="ExpiryQueue":add(entries=["java:/jms/queue/ExpiryQueue"])
+/profile="demo"/subsystem="messaging"/hornetq-server="live"/jms-queue="DLQ":add(entries=["java:/jms/queue/DLQ"])
+/profile="demo"/subsystem="messaging"/hornetq-server="live"/pooled-connection-factory="hornetq-ra":add(connector={"in-vm" => undefined},entries=["java:/JmsXA"],transaction="xa")
+/profile="demo"/subsystem="messaging"/hornetq-server="live"/remote-acceptor="netty":add(socket-binding="messaging")
+/profile="demo"/subsystem="messaging"/hornetq-server="live"/remote-acceptor="netty-throughput":add(socket-binding="messaging-throughput")
+/profile="demo"/subsystem="messaging"/hornetq-server="live"/remote-acceptor="netty-throughput"/param="batch-delay":add(value="50")
+/profile="demo"/subsystem="messaging"/hornetq-server="live"/remote-acceptor="netty-throughput"/param="direct-deliver":add(value="false")
+/profile="demo"/subsystem="messaging"/hornetq-server="live"/remote-connector="netty":add(socket-binding="messaging")
+/profile="demo"/subsystem="messaging"/hornetq-server="live"/remote-connector="netty-throughput":add(socket-binding="messaging-throughput")
+/profile="demo"/subsystem="messaging"/hornetq-server="live"/remote-connector="netty-throughput"/param="batch-delay":add(value="50")
+/profile="demo"/subsystem="messaging"/hornetq-server="live"/security-setting="#":add()
+/profile="demo"/subsystem="messaging"/hornetq-server="live"/security-setting="#"/role="guest":add(consume="true",create-durable-queue="false",create-non-durable-queue="true",delete-durable-queue="false",delete-non-durable-queue="true",manage="false",send="true")
+/profile="demo"/subsystem="messaging"/hornetq-server="live"/path="paging-directory":add(path="live/paging")
+/profile="demo"/subsystem="messaging"/hornetq-server="live"/path="large-messages-directory":add(path="live/large-messages")
+/profile="demo"/subsystem="messaging"/hornetq-server="live"/path="bindings-directory":add(path="live/bindings")
+/profile="demo"/subsystem="messaging"/hornetq-server="live"/path="journal-directory":add(path="live/journal")
+# Create queues and topics
+/profile=demo/subsystem=messaging/hornetq-server=live/jms-queue=DemoQueue:add(entries=["java:/queue/DemoQueue"])
+# Create active-backup configuration in active side of the cluster
+/profile=demo/subsystem=messaging/hornetq-server=live:write-attribute(name=backup,value=false)
+/profile=demo/subsystem=messaging/hornetq-server=live:write-attribute(name=allow-failback,value=true)
+/profile=demo/subsystem=messaging/hornetq-server=live:write-attribute(name=check-for-live-server,value=true)
+/profile=demo/subsystem=messaging/hornetq-server=live:write-attribute(name=shared-store,value=false)
+/profile=demo/subsystem=messaging/hornetq-server=live:write-attribute(name=failover-on-shutdown,value=true)
+/profile=demo/subsystem=messaging/hornetq-server=live:write-attribute(name=backup-group-name,value="${jboss.messaging.live.group}")
+
+# Backup (no queues, no connnection factories, different server-id, different messaging and messging-throughput socket binding)
+/profile="demo"/subsystem="messaging"/hornetq-server="backup":add(cluster-password="${jboss.messaging.cluster.password}",clustered="true",journal-min-files="2",journal-type="NIO",persistence-enabled="true")
+/profile="demo"/subsystem="messaging"/hornetq-server="backup"/address-setting="#":add(address-full-policy="PAGE",dead-letter-address="jms.queue.DLQ",expiry-address="jms.queue.ExpiryQueue",max-size-bytes="10485760",message-counter-history-day-limit="10",page-size-bytes="2097152",redelivery-delay="0",redistribution-delay="1000")
+/profile="demo"/subsystem="messaging"/hornetq-server="backup"/broadcast-group="bg-group1":add(broadcast-period="5000",connectors=["netty"],socket-binding="messaging-group")
+/profile="demo"/subsystem="messaging"/hornetq-server="backup"/cluster-connection="my-cluster":add(cluster-connection-address="jms",connector-ref="netty",discovery-group-name="dg-group1")
+/profile="demo"/subsystem="messaging"/hornetq-server="backup"/discovery-group="dg-group1":add(refresh-timeout="10000",socket-binding="messaging-group")
+/profile="demo"/subsystem="messaging"/hornetq-server="backup"/in-vm-acceptor="in-vm":add(server-id="1")
+/profile="demo"/subsystem="messaging"/hornetq-server="backup"/in-vm-connector="in-vm":add(server-id="1")
+/profile="demo"/subsystem="messaging"/hornetq-server="backup"/pooled-connection-factory="hornetq-ra":add(connector={"in-vm" => undefined},entries=["java:/JmsXA"],transaction="xa")
+/profile="demo"/subsystem="messaging"/hornetq-server="backup"/remote-acceptor="netty":add(socket-binding="messaging-backup")
+/profile="demo"/subsystem="messaging"/hornetq-server="backup"/remote-acceptor="netty-throughput":add(socket-binding="messaging-throughput-backup")
+/profile="demo"/subsystem="messaging"/hornetq-server="backup"/remote-acceptor="netty-throughput"/param="batch-delay":add(value="50")
+/profile="demo"/subsystem="messaging"/hornetq-server="backup"/remote-acceptor="netty-throughput"/param="direct-deliver":add(value="false")
+/profile="demo"/subsystem="messaging"/hornetq-server="backup"/remote-connector="netty":add(socket-binding="messaging-backup")
+/profile="demo"/subsystem="messaging"/hornetq-server="backup"/remote-connector="netty-throughput":add(socket-binding="messaging-throughput-backup")
+/profile="demo"/subsystem="messaging"/hornetq-server="backup"/remote-connector="netty-throughput"/param="batch-delay":add(value="50")
+/profile="demo"/subsystem="messaging"/hornetq-server="backup"/security-setting="#":add()
+/profile="demo"/subsystem="messaging"/hornetq-server="backup"/security-setting="#"/role="guest":add(consume="true",create-durable-queue="false",create-non-durable-queue="true",delete-durable-queue="false",delete-non-durable-queue="true",manage="false",send="true")
+/profile="demo"/subsystem="messaging"/hornetq-server="backup"/path="paging-directory":add(path="backup/paging")
+/profile="demo"/subsystem="messaging"/hornetq-server="backup"/path="large-messages-directory":add(path="backup/large-messages")
+/profile="demo"/subsystem="messaging"/hornetq-server="backup"/path="bindings-directory":add(path="backup/bindings")
+/profile="demo"/subsystem="messaging"/hornetq-server="backup"/path="journal-directory":add(path="backup/journal")
+# Create queues and topics
+# not need to create queues and topics in backup server
+# Create active-backup configuration in backup side of the cluster
+/profile=demo/subsystem=messaging/hornetq-server=backup:write-attribute(name=backup,value=true)
+/profile=demo/subsystem=messaging/hornetq-server=live:write-attribute(name=allow-failback,value=true)
+/profile=demo/subsystem=messaging/hornetq-server=backup:write-attribute(name=check-for-live-server,value=true)
+/profile=demo/subsystem=messaging/hornetq-server=backup:write-attribute(name=shared-store,value=false)
+/profile=demo/subsystem=messaging/hornetq-server=backup:write-attribute(name=failover-on-shutdown,value=true)
+/profile=demo/subsystem=messaging/hornetq-server=backup:write-attribute(name=backup-group-name,value="${jboss.messaging.backup.group}")
+
+echo "Messaging  configured"
+
+# Execute batch
+run-batch
