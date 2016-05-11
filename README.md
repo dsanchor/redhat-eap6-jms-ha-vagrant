@@ -42,7 +42,7 @@ Fedora:
   -bash-4.2$ tail -f /var/log/jbossas/domain/console.log
 
 
-## Test cluster failure: live-backup pair servers (collocated topology)
+## Test cluster failure: live-backup pair servers (colocated topology)
 
 1. Disable consumer.ear first (via web or CLI)
 
